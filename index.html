@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Assistant</title>
+    <!-- Include Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Chart.js for the dashboard mood chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom styles for a better look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* A light gray background */
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .chat-bubble-assistant {
+            background-color: #e5e7eb; /* Gray-200 */
+            align-self: flex-start;
+        }
+        .chat-bubble-user {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            align-self: flex-end;
+        }
+        .prose {
+            max-width: none;
+        }
+        .prose h1, .prose h2, .prose h3 {
+            margin-bottom: 0.5em;
+        }
+        .prose p {
+            margin-bottom: 1em;
+        }
+        .prose ul {
+            list-style-position: inside;
+            padding-left: 1em;
+        }
+        .prose li {
+            margin-bottom: 0.5em;
+        }
+        /* Loading spinner animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Mental Health Assistant</h1>
+            <p class="text-lg text-gray-600 mt-2">A safe space for self-assessment and mood tracking.</p>
+            <div class="mt-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-lg">
+                <p><strong>Disclaimer:</strong> This is not a substitute for professional medical advice. For immediate help, contact a crisis helpline.</p>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs">
+                <button id="tab-assessment" onclick="switchTab('assessment')" class="tab-button text-blue-600 border-blue-600 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2">
+                    Assessment
+                </button>
+                <button id="tab-tracker" onclick="switchTab('tracker')" class="tab-button text-gray-500 hover:text-gray-700 hover:border-gray-300 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent">
+                    Mood Tracker
+                </button>
+                <button id="tab-dashboard" onclick="switchTab('dashboard')" class="tab-button text-gray-500 hover:text-gray-700 hover:border-gray-300 px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent">
+                    Dashboard
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="bg-white p-6 rounded-2xl shadow-lg">
+            
+            <!-- Assessment Tab Content -->
+            <div id="content-assessment">
+                <div id="assessment-start-view">
+                    <h2 class="text-2xl font-semibold mb-4">Start Your Self-Assessment</h2>
+                    <p class="mb-6 text-gray-600">This confidential assessment consists of 10 simple 'Yes' or 'No' questions to help you reflect on your well-being over the last two weeks.</p>
+                    <button id="start-assessment-btn" class="w-full sm:w-auto bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition duration-300 shadow-md">
+                        Begin Assessment
+                    </button>
+                </div>
+
+                <div id="assessment-chat-view" class="hidden">
+                    <div id="chat-box" class="h-96 overflow-y-auto p-4 mb-4 bg-gray-50 rounded-lg border flex flex-col space-y-4">
+                        <!-- Chat messages will be appended here -->
+                    </div>
+                    <div id="chat-input-area" class="flex items-center space-x-3">
+                        <input type="text" id="user-input" placeholder="Type 'Yes' or 'No'..." class="flex-grow p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" disabled>
+                        <button id="send-btn" class="bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400" disabled>Send</button>
+                    </div>
+                     <div id="report-view" class="hidden mt-4 prose">
+                        <!-- Final report will be displayed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mood Tracker Tab Content -->
+            <div id="content-tracker" class="hidden">
+                <h2 class="text-2xl font-semibold mb-2">Log Your Mood</h2>
+                <p class="mb-6 text-gray-600">How are you feeling today? Rate your mood from 0 (low) to 10 (high).</p>
+                <div class="space-y-6">
+                    <div>
+                        <label for="mood-slider" class="block mb-2 font-medium">Mood: <span id="mood-value" class="font-bold text-blue-600">5</span>/10</label>
+                        <input type="range" id="mood-slider" min="0" max="10" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <label for="mood-note" class="block mb-2 font-medium">Notes (Optional)</label>
+                        <textarea id="mood-note" rows="3" placeholder="Any thoughts on why you feel this way?" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"></textarea>
+                    </div>
+                    <button id="log-mood-btn" class="w-full sm:w-auto bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition shadow-md">Log Today's Mood</button>
+                    <p id="log-status" class="text-green-700 mt-2 font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab Content -->
+            <div id="content-dashboard" class="hidden">
+                <h2 class="text-2xl font-semibold mb-4">Your Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4">Mood History</h3>
+                        <canvas id="mood-chart"></canvas>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4">Most Recent Report</h3>
+                        <div id="dashboard-report" class="prose max-w-full h-80 overflow-y-auto text-sm">
+                            <p>Your latest assessment report will appear here once you complete an assessment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let session_id = null;
+        let chart = null;
+
+        // --- DOM Element References ---
+        const startAssessmentBtn = document.getElementById('start-assessment-btn');
+        const assessmentStartView = document.getElementById('assessment-start-view');
+        const assessmentChatView = document.getElementById('assessment-chat-view');
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const reportView = document.getElementById('report-view');
+        const chatInputArea = document.getElementById('chat-input-area');
+        
+        const moodSlider = document.getElementById('mood-slider');
+        const moodValue = document.getElementById('mood-value');
+        const moodNote = document.getElementById('mood-note');
+        const logMoodBtn = document.getElementById('log-mood-btn');
+        const logStatus = document.getElementById('log-status');
+
+        // --- Utility Functions ---
+        
+        /**
+         * Appends a message to the chat box.
+         * @param {string} text - The message text.
+         * @param {string} sender - 'user' or 'assistant'.
+         */
+        function addMessage(text, sender) {
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-md p-3 rounded-xl ${sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-assistant'}`;
+            // Use a simple regex to format newlines and bold text for display
+            text = text.replace(/\n/g, '<br>');
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            bubble.innerHTML = text;
+            chatBox.appendChild(bubble);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        /**
+         * Shows a loading indicator in the chat box.
+         */
+        function showLoader() {
+            const loaderContainer = document.createElement('div');
+            loaderContainer.id = 'loader';
+            loaderContainer.className = 'flex justify-start';
+            loaderContainer.innerHTML = `<div class="p-3 rounded-xl bg-gray-200"><div class="loader"></div></div>`;
+            chatBox.appendChild(loaderContainer);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        /**
+         * Removes the loading indicator from the chat box.
+         */
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+        }
+
+        /**
+         * Handles tab switching logic for the UI.
+         * @param {string} tabName - The name of the tab to switch to.
+         */
+        function switchTab(tabName) {
+            // Hide all content
+            ['assessment', 'tracker', 'dashboard'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('text-blue-600', 'border-blue-600');
+                document.getElementById(`tab-${t}`).classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Show selected content
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('text-blue-600', 'border-blue-600');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-gray-500', 'border-transparent');
+
+            // Fetch dashboard data if that tab is selected
+            if (tabName === 'dashboard') {
+                fetchDashboardData();
+            }
+        }
+
+        // --- API Call Functions ---
+
+        /**
+         * Calls the backend to start a new assessment session.
+         */
+        async function startAssessment() {
+            startAssessmentBtn.disabled = true;
+            startAssessmentBtn.textContent = 'Starting...';
+
+            try {
+                const response = await fetch('/start', { method: 'POST' });
+                const data = await response.json();
+                
+                session_id = data.session_id;
+                assessmentStartView.classList.add('hidden');
+                assessmentChatView.classList.remove('hidden');
+                
+                addMessage(data.message, 'assistant');
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+
+            } catch (error) {
+                console.error('Error starting assessment:', error);
+                addMessage('Sorry, something went wrong. Please try refreshing the page.', 'assistant');
+            } finally {
+                startAssessmentBtn.disabled = false;
+                startAssessmentBtn.textContent = 'Begin Assessment';
+            }
+        }
+
+        /**
+         * Sends the user's answer to the backend and handles the response.
+         */
+        async function sendAnswer() {
+            const answer = userInput.value.trim();
+            if (!answer) return;
+
+            addMessage(answer, 'user');
+            userInput.value = '';
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            showLoader();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id, answer })
+                });
+                const data = await response.json();
+                
+                hideLoader();
+                
+                if (data.type === 'question') {
+                    addMessage(data.message, 'assistant');
+                    userInput.disabled = false;
+                    sendBtn.disabled = false;
+                    userInput.focus();
+                } else if (data.type === 'report') {
+                    // Display final report
+                    chatInputArea.classList.add('hidden');
+                    let reportHTML = data.message;
+                    reportHTML = reportHTML.replace(/\n/g, '<br>');
+                    reportHTML = reportHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    reportView.innerHTML = reportHTML;
+                    reportView.classList.remove('hidden');
+                    addMessage("Thank you for completing the assessment. Your report is shown above.", "assistant");
+                }
+            } catch (error) {
+                hideLoader();
+                console.error('Error sending answer:', error);
+                addMessage('There was an error processing your answer. Please try again.', 'assistant');
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+            }
+        }
+
+        /**
+         * Logs the user's mood to the backend.
+         */
+        async function logMood() {
+            if (!session_id) {
+                alert("Please start an assessment first to create a session.");
+                return;
+            }
+            logMoodBtn.disabled = true;
+            logStatus.textContent = "Logging...";
+            
+            const payload = {
+                session_id: session_id,
+                mood_value: parseInt(moodSlider.value, 10),
+                mood_note: moodNote.value
+            };
+
+            try {
+                const response = await fetch('/log_mood', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    logStatus.textContent = `Mood for ${data.log.date} logged successfully!`;
+                    moodNote.value = ''; // Clear note after logging
+                } else {
+                    logStatus.textContent = "Failed to log mood. Please try again.";
+                }
+            } catch (error) {
+                console.error("Error logging mood:", error);
+                logStatus.textContent = "An error occurred. Please try again.";
+            } finally {
+                logMoodBtn.disabled = false;
+                 setTimeout(() => logStatus.textContent = '', 3000);
+            }
+        }
+
+        /**
+         * Fetches data for the dashboard and renders the chart and report.
+         */
+        async function fetchDashboardData() {
+            if (!session_id) {
+                document.getElementById('dashboard-report').innerHTML = "<p>Please complete an assessment to see your dashboard.</p>";
+                return;
+            }
+            try {
+                const response = await fetch(`/dashboard/${session_id}`);
+                const data = await response.json();
+                
+                // Render report
+                let reportHTML = data.last_report.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                document.getElementById('dashboard-report').innerHTML = reportHTML;
+                
+                // Render chart
+                const ctx = document.getElementById('mood-chart').getContext('2d');
+                const labels = data.mood_logs.map(log => log.date);
+                const values = data.mood_logs.map(log => log.mood);
+                
+                if (chart) {
+                    chart.destroy(); // Destroy previous chart instance to prevent duplicates
+                }
+
+                if (labels.length > 0) {
+                     chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Mood Score',
+                                data: values,
+                                fill: false,
+                                borderColor: 'rgb(59, 130, 246)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 10
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Handle case with no mood data
+                     document.getElementById('mood-chart').parentElement.innerHTML = '<canvas id="mood-chart"></canvas><p class="text-center text-gray-500 mt-4">No mood data logged yet.</p>';
+                }
+
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            }
+        }
+
+
+        // --- Event Listeners ---
+        startAssessmentBtn.addEventListener('click', startAssessment);
+        sendBtn.addEventListener('click', sendAnswer);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendAnswer();
+            }
+        });
+        
+        moodSlider.addEventListener('input', (e) => {
+            moodValue.textContent = e.target.value;
+        });
+        logMoodBtn.addEventListener('click', logMood);
+
+    </script>
+
+</body>
+</html>
