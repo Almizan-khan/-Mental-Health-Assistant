@@ -8,9 +8,15 @@ This project provides a safe, interactive space where users can answer self-refl
 
 ⚠️ **Disclaimer**: This is not a substitute for professional medical advice. If you are in crisis, please reach out to a licensed professional or call your local helpline immediately.
 
----
 
-## ✨ Features
+---
+<img width="1514" height="1178" alt="Screenshot 2025-09-21 205214" src="https://github.com/user-attachments/assets/076279c0-7f93-4a15-8bf8-b5fc71841082" />
+
+<img width="1669" height="1181" alt="Screenshot 2025-09-21 205534" src="https://github.com/user-attachments/assets/3a14bc25-d083-490c-bfab-5c7752b18c09" />
+
+
+
+
 
 * 📋 **Self-Assessment Chat**
   Interactive 10-question “Yes/No” assessment with an AI assistant.
